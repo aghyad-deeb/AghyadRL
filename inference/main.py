@@ -23,11 +23,11 @@ class InferenceServer:
     BASE_URL = f"http://{HOST}:{PORT}"
     FIXED_LORA_NAME = "only_lora"
 
-    def __init__(self, rollout_args):
-        self.rollout_args = rollout_args
+    def __init__(self, inference_args):
+        self.inference_args = inference_args
         # We override only parts specified in rollout config to keep model 
         # defaults if not specified (e.g. best temperature varies by model)
-        self.default_sampling_params = rollout_args.default_sampling_params
+        self.default_sampling_params = inference_args.default_sampling_params
         # By having this None, we default to using no-loras
         self.curr_lora_name = None
 
@@ -39,16 +39,16 @@ class InferenceServer:
 
     def start_server(self):
         server_args = ServerArgs(
-            model_path=self.rollout_args.model_id,
+            model_path=self.inference_args.model_id,
             host=self.HOST,
             port=self.PORT,
-            dp_size=self.rollout_args.data_parallel_size,
-            tp_size=self.rollout_args.tensor_parallel_size,
-            mem_fraction_static=self.rollout_args.mem_fraction_static,
+            dp_size=self.inference_args.data_parallel_size,
+            tp_size=self.inference_args.tensor_parallel_size,
+            mem_fraction_static=self.inference_args.mem_fraction_static,
             trust_remote_code=True,
             enable_lora=True,
-            max_lora_rank=self.rollout_args.lora_rank,
-            lora_target_modules=self.rollout_args.lora_target_modules,
+            max_lora_rank=self.inference_args.lora_rank,
+            lora_target_modules=self.inference_args.lora_target_modules,
             max_running_requests=self.MAX_RUNNING_REQUESTS,
             load_balancing_method="auto",
         )
