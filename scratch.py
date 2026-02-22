@@ -73,3 +73,11 @@ infs = InferenceServer(rg)
 resp = await infs.load_lora_adapter("YoussefHosni/Qwen3-0.6b-2-Token-arabic-LoRA-finetuned")
 await resp.json()
 # %%
+resp.status
+
+# %%
+resp = await infs.generate(ids, sampling_params)
+# %%
+await resp.json()
+
+# %%
