@@ -1,4 +1,6 @@
 import torch
+from jaxtyping import Float, Int
+from beartype import beartype
 from transformers import AutoModelForCausalLM
 from peft import LoraConfig, get_peft_model
 
@@ -34,22 +36,30 @@ class Trainer:
         model = get_peft_model(model, lora_config)
         self.model = model
     
-    def forward_backward(self, inputs: torch.Tensor, advantages: torch.Tensor, loss_function):
+    @beartype
+    def forward_backward(
+        self,
+        inputs: Int[torch.Tensor, "num_inputs max_seq_len"],
+        advantages: Float[torch.Tensor, "num_inputs"],
+        loss_function,
+    ):
         # inputs: (num_inputs, max_input_len)
         # advantages: (num_inputs)
         #~ Maybe model.train
         #~ do we need padding? 
         micro_bsz = self.training_args.micro_batch_size
+        #~ this shouldn't stay like this probably cause we maybe have a foreward
+        #~ backward on num_inputs not divisible by micro_bsz and it's ok
         assert inputs.shape[0] % micro_bsz == 0, f"forward-backward num_inputs is not divisible by micro batch size. {inputs.shape=}, {micro_bsz=}"
         assert inputs.shape[0] == advantages.shape[0], f"num_inputs in `inputs` != num_inputs in `advantages`. {inputs.shape=}, {advantages.shape=}"
         num_iterations = inputs.shape[0] / micro_bsz
-        micro_batches = inputs.view(num_iterations, micro_bsz, *inputs.shape[:2])
-        micro_batches_advantages = advantages.view(num_iterations, micro_bsz)
+        micro_batches: Int[torch.Tensor, "num_iterations micro_bsz max_seq_len"] = inputs.view(num_iterations, micro_bsz, *inputs.shape[1:])
+        micro_batches_advantages: Float[torch.Tensor, "num_iterations micro_bsz"] = advantages.view(num_iterations, micro_bsz)
         for i in range(num_iterations):
-            mb = micro_batches[i]
-            mb_advantages = micro_batches_advantages[i]
-            outputs = self.model(mb)
-            loss = loss_function(outputs, mb_advantages)
+            mb: Int[torch.Tensor, "micro_bsz max_seq_len"] = micro_batches[i]
+            mb_advantages: Int[torch.Tensor, "micro_bsz"] = micro_batches_advantages[i]
+            logprobs: Float[torch.Tensor, "micro_bsz max_seq_len vocab_size"] = self.model(mb).logits
+            loss = loss_function(mb, logprobs, mb_advantages)
             loss.backward()
 
         
