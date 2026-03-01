@@ -41,6 +41,7 @@ class Trainer:
         self,
         inputs: Int[torch.Tensor, "num_inputs max_seq_len"],
         advantages: Float[torch.Tensor, "num_inputs"],
+        old_logprobs: Float[torch.Tensor, "num_inputs max_seq_len"],
         loss_function,
     ):
         # inputs: (num_inputs, max_input_len)
@@ -52,18 +53,18 @@ class Trainer:
         #~ backward on num_inputs not divisible by micro_bsz and it's ok
         assert inputs.shape[0] % micro_bsz == 0, f"forward-backward num_inputs is not divisible by micro batch size. {inputs.shape=}, {micro_bsz=}"
         assert inputs.shape[0] == advantages.shape[0], f"num_inputs in `inputs` != num_inputs in `advantages`. {inputs.shape=}, {advantages.shape=}"
-        num_iterations = inputs.shape[0] / micro_bsz
+        num_iterations = inputs.shape[0] // micro_bsz
         micro_batches: Int[torch.Tensor, "num_iterations micro_bsz max_seq_len"] = inputs.view(num_iterations, micro_bsz, *inputs.shape[1:])
         micro_batches_advantages: Float[torch.Tensor, "num_iterations micro_bsz"] = advantages.view(num_iterations, micro_bsz)
         for i in range(num_iterations):
             mb: Int[torch.Tensor, "micro_bsz max_seq_len"] = micro_batches[i]
             mb_advantages: Int[torch.Tensor, "micro_bsz"] = micro_batches_advantages[i]
             logprobs: Float[torch.Tensor, "micro_bsz max_seq_len vocab_size"] = self.model(mb).logits
-            loss = loss_function(mb, logprobs, mb_advantages)
+            loss = loss_function(mb, logprobs, old_logprobs, mb_advantages)
             loss.backward()
 
         
 
-    # for better compute usage, I can calculate gradients as soon as I recieve 
-    # rollout, but only take step once I reach batch size (maybe take gardient
-    # at specific micro batch size as opposed to the full thing)
+    #~ for better compute usage, I can calculate gradients as soon as I recieve 
+    #~ rollout, but only take step once I reach batch size (maybe take gardient
+    #~ at specific micro batch size as opposed to the full thing)
