@@ -1,6 +1,9 @@
 import aiohttp
+from typing import Optional
 import requests
+from dataclasses import dataclass
 from sglang.srt.entrypoints.http_server import launch_server
+from sglang.srt.sampling.sampling_params import SamplingParams
 from sglang.srt.server_args import ServerArgs
 
 async def async_get(url):
@@ -15,6 +18,25 @@ async def async_post(url, json):
     await session.close()
     return resp
 
+
+@dataclass
+class InferenceArgs:
+    # model args
+    model_id: str
+
+    default_sampling_params: Optional[SamplingParams] = None
+    #~ dtype: str
+
+    data_parallel_size: int = 1
+    tensor_parallel_size: int = 1
+
+    mem_fraction_static: float = 0.7
+
+    # lora args
+    lora_rank: int = 32
+    lora_target_modules: str = "all-linear"
+
+
 class InferenceServer:
 
     MAX_RUNNING_REQUESTS = 256
@@ -23,7 +45,7 @@ class InferenceServer:
     BASE_URL = f"http://{HOST}:{PORT}"
     FIXED_LORA_NAME = "only_lora"
 
-    def __init__(self, inference_args):
+    def __init__(self, inference_args: InferenceArgs):
         self.inference_args = inference_args
         # We override only parts specified in rollout config to keep model 
         # defaults if not specified (e.g. best temperature varies by model)
@@ -50,7 +72,7 @@ class InferenceServer:
             max_lora_rank=self.inference_args.lora_rank,
             lora_target_modules=self.inference_args.lora_target_modules,
             max_running_requests=self.MAX_RUNNING_REQUESTS,
-            load_balancing_method="auto",
+            #~ load_balancing_method="auto",
         )
         launch_server(server_args)
 

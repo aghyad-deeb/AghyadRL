@@ -3,6 +3,20 @@ from jaxtyping import Float, Int
 from beartype import beartype
 from transformers import AutoModelForCausalLM
 from peft import LoraConfig, get_peft_model
+from dataclasses import dataclass
+
+@dataclass
+class TrainingArgs:
+    # model args
+    model_id: str
+    dtype: str
+
+    # compute args
+    micro_batch_size: int 
+
+    # lora args
+    lora_rank: int = 32
+    lora_target_modules: str = "all-linear"
 
 
 class Trainer:
