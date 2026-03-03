@@ -1,10 +1,9 @@
 # %%
-
 import torch
 from jaxtyping import Int, Float
 from beartype import beartype
 from transformers import AutoTokenizer
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from main import Trainer
 
 # %%
@@ -19,7 +18,7 @@ class TrainingArgs:
 
     # lora args
     lora_rank: int = 32
-    lora_target_modules: str = "all-linear"
+    lora_target_modules: list = field(default_factory=lambda: ["q_proj", "k_proj", "v_proj",  "o_proj", "gate_proj", "up_proj", "down_proj"])
 
 # %%
 @beartype

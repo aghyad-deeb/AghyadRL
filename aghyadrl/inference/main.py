@@ -1,7 +1,8 @@
+import asyncio
 import aiohttp
 from typing import Optional
 import requests
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from sglang.srt.entrypoints.http_server import launch_server
 from sglang.srt.sampling.sampling_params import SamplingParams
 from sglang.srt.server_args import ServerArgs
@@ -34,7 +35,7 @@ class InferenceArgs:
 
     # lora args
     lora_rank: int = 32
-    lora_target_modules: str = "all-linear"
+    lora_target_modules: list[str] = field(default_factory=lambda: ["q_proj", "k_proj", "v_proj",  "o_proj", "gate_proj", "up_proj", "down_proj"])
 
 
 class InferenceServer:
@@ -59,7 +60,7 @@ class InferenceServer:
         # print(response.json)
         return response.status == 200
 
-    def start_server(self):
+    async def start_server(self):
         server_args = ServerArgs(
             model_path=self.inference_args.model_id,
             host=self.HOST,
@@ -74,7 +75,11 @@ class InferenceServer:
             max_running_requests=self.MAX_RUNNING_REQUESTS,
             #~ load_balancing_method="auto",
         )
-        launch_server(server_args)
+        loop = asyncio.get_running_loop()
+        loop.run_in_executor(
+            None,
+            launch_server(server_args)
+        )
 
     # dp_size must be 1 for lora weight syncing
     async def load_lora_adapter(self, lora_path):
