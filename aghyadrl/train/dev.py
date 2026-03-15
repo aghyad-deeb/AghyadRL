@@ -62,3 +62,25 @@ old_logprobs = torch.gather(test_logprobs, -1, test_inputs.unsqueeze(-1)).squeez
 trainer.forward_backward(test_inputs, advantages, old_logprobs, vanilla_loss)
 
 # %%
+import aiohttp
+
+async def async_post(url, json):
+    session = aiohttp.ClientSession()
+    try:
+        resp = await session.request("POST", url, json=json)
+        return resp
+    finally:
+        await session.close()
+# %%
+
+sampling_params = None
+generate_json = dict(
+    input_ids=[0],
+    sampling_params=sampling_params,
+    # lora_path=self.curr_lora_name,
+)
+url = f"http://127.0.0.1:8112/generate"
+response = await async_post(
+    url,
+    json=generate_json
+)

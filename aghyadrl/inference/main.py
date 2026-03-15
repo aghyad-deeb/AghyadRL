@@ -107,7 +107,7 @@ class InferenceServer:
         self.curr_lora_name = self.FIXED_LORA_NAME
         return load_response
 
-    async def generate(self, input_tokens, sampling_params=None):
+    async def generate(self, input_tokens: list, sampling_params=None):
         assert await self.check_health()
         if not sampling_params:
             sampling_params = self.default_sampling_params
