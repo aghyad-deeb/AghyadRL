@@ -9,15 +9,19 @@ from sglang.srt.server_args import ServerArgs
 
 async def async_get(url):
     session = aiohttp.ClientSession()
-    resp = await session.request("GET", url)
-    await session.close()
-    return resp
+    try:
+        resp = await session.request("GET", url)
+        return resp
+    finally:
+        await session.close()
 
 async def async_post(url, json):
     session = aiohttp.ClientSession()
-    resp = await session.request("POST", url, json=json)
-    await session.close()
-    return resp
+    try:
+        resp = await session.request("POST", url, json=json)
+        return resp
+    finally:
+        await session.close()
 
 
 @dataclass
@@ -60,7 +64,7 @@ class InferenceServer:
         # print(response.json)
         return response.status == 200
 
-    async def start_server(self):
+    def start_server(self):
         server_args = ServerArgs(
             model_path=self.inference_args.model_id,
             host=self.HOST,
@@ -75,11 +79,7 @@ class InferenceServer:
             max_running_requests=self.MAX_RUNNING_REQUESTS,
             #~ load_balancing_method="auto",
         )
-        loop = asyncio.get_running_loop()
-        loop.run_in_executor(
-            None,
-            launch_server(server_args)
-        )
+        launch_server(server_args)
 
     # dp_size must be 1 for lora weight syncing
     async def load_lora_adapter(self, lora_path):
