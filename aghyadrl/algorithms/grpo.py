@@ -20,7 +20,7 @@ async def main():
     tokenizer = AutoTokenizer.from_pretrained(model_id)
     test_input = "hello, world!"
     input_tokens = tokenizer(test_input)["input_ids"]
-    generation = inference_server.generate(input_tokens)
+    generation = await inference_server.generate(input_tokens)
     print(f"{generation=}")
 
 if __name__ == "__main__":
