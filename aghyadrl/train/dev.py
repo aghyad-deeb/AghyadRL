@@ -84,3 +84,6 @@ response = await async_post(
     url,
     json=generate_json
 )
+# %%
+await response.json()
+# %%

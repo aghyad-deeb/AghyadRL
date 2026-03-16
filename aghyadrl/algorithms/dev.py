@@ -23,4 +23,16 @@ async def it():
         yield f"batch_{i}"
 
 async for i in it():
-    await d(i)
+    print(i)
+    print(await d(1))
+# %%
+
+import asyncio
+
+async def s(t):
+    await asyncio.sleep(t)
+    return f"done with {t=}"
+
+tasks = [asyncio.create_task(s(i)) for i in range(3)]
+await asyncio.gather(*tasks).result()
+# %%
