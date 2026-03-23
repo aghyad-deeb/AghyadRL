@@ -34,5 +34,5 @@ async def s(t):
     return f"done with {t=}"
 
 tasks = [asyncio.create_task(s(i)) for i in range(3)]
-await asyncio.gather(*tasks).result()
+(await asyncio.gather(*tasks))
 # %%

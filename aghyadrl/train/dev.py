@@ -59,7 +59,7 @@ test_logprobs = trainer.model(test_inputs).logits
 print(f"{test_logprobs=}")
 old_logprobs = torch.gather(test_logprobs, -1, test_inputs.unsqueeze(-1)).squeeze(-1)
 
-trainer.forward_backward(test_inputs, advantages, old_logprobs, vanilla_loss)
+trainer.forward_backward(test_inputs, advantages, old_logprobs, reinforce_loss)
 
 # %%
 import aiohttp
@@ -86,4 +86,59 @@ response = await async_post(
 )
 # %%
 await response.json()
+# %%
+
+from dataclasses import dataclass
+
+@dataclass
+class Test:
+    lst : list
+    val : int
+test = Test([1, 2], 5)
+test.lst.append(3)
+test.val = 9
+print(test)
+# %%
+import torch
+
+max_prompt_len = 6
+max_response_len = 10
+prompt = [1,2,3,4]
+resp = [71, 72, 73, 74, 75, 76]
+tokens = torch.tensor(prompt+resp)
+display(tokens)
+display(torch.nn.functional.pad(
+    tokens,
+    (max_prompt_len - len(prompt), max_response_len - len(resp)),
+    "constant",
+    23432
+))
+
+
+
+# %%
+from transformers import AutoTokenizer, AutoModelForCausalLM
+
+t = AutoTokenizer.from_pretrained("Qwen/Qwen3-8b")
+model = AutoModelForCausalLM.from_pretrained("Qwen/Qwen3-8b")
+
+# %%
+msgs = [
+    {
+        "role": "user",
+        "content": "hello, world!"
+    }
+]
+inp = t.apply_chat_template(msgs, return_tensors="pt")
+inp, "\n", [t.decode(s) for s in inp]
+# %%
+t.pad_token_id, t.eos_token_id, t.pad_token, t.eos_token
+# %%
+out = model(input_ids=inp)
+out
+# %%
+out.logits[0][-1].argmax()
+# %%
+t.decode( out.logits[0][-1].argmax() )
+
 # %%
